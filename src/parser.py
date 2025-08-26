@@ -51,6 +51,10 @@ class Parser:
             "Sec-Fetch-User": "?1",
             "DNT": "1",
         }
+        self.session = requests.Session()
+        self.session.headers.update(self.headers)
+        
+        
     def _save_debug_html(self, html_text: str, filename: str):
         with open(f"debug/{filename}.html", "w", encoding="utf-8") as f:
             f.write(html_text)
@@ -73,9 +77,8 @@ class Parser:
 
     def _request(self, url: str, referer: str):
         try:    
-            headers = self.headers.copy()
-            headers["Referer"] = referer
-            response = requests.get(url, headers=headers)
+            self.session.headers.update({"Referer": referer})
+            response = self.session.get(url)
             response.raise_for_status()
             return response.text
         except Exception as e:
@@ -139,8 +142,10 @@ class Parser:
         try:
             pagination_element = tree.xpath('//div[contains(@class, "rt-r-ai-center")]//span[contains(string(), "Page") and contains(string(), "of")]')[0]
             pagination_text = pagination_element.xpath('string()').strip()
-            max_page = int(re.findall(r'\d+', pagination_text)[-1])
-            if max_page > 1:
+            current_page_text, max_page_text = re.findall(r'\d+', pagination_text)
+            current_page = int(current_page_text)
+            max_page = int(max_page_text)
+            if max_page > 1 and current_page == 1:
                 base_url = sub_category_url.split('?page=')[0]
                 for page in range(2, max_page + 1):
                     link = base_url + f"?page={page}"
