@@ -108,6 +108,8 @@ class Scraper:
             book_title = await self.page.text_content(".product_main h1")
             book_category = await self.page.locator(".breadcrumb li a").last.text_content()
             description_count = await self.page.locator(".product_page p:not([class])").count()
+            image_src = await self.page.locator(".item.active img").get_attribute("src")
+            book_image_url = urljoin(self.page.url, image_src)
             if description_count > 0:
                 book_description = await self.page.inner_text(".product_page p:not([class])")
             else:
@@ -149,7 +151,18 @@ class Scraper:
             await self.close()
             return
 
-        book = Book(book_title, book_upc, book_category, book_description, book_price, book_tax, book_availability, book_availability_count, book_number_of_reviews)
+        book = Book(
+            book_title,
+            book_upc,
+            book_category,
+            book_description,
+            book_price,
+            book_tax,
+            book_availability,
+            book_availability_count,
+            book_number_of_reviews,
+            book_image_url
+            )
         self.result_queue.put(book)
         self.current_task = None
 

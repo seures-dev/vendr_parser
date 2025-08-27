@@ -62,7 +62,8 @@ class Writer:
             book_tax VARCHAR(255) NOT NULL,
             book_availability BOOLEAN NOT NULL,
             book_availability_count INTEGER NOT NULL,
-            book_number_of_reviews INTEGER NOT NULL
+            book_number_of_reviews INTEGER NOT NULL,
+            book_image_url VARCHAR(255) NOT NULL
         );
         """
         try:
@@ -77,8 +78,18 @@ class Writer:
     def insert_book(self, book: Book):
         """Insert a Book object into the books table."""
         insert_query = """
-        INSERT INTO books (book_title, book_upc, book_category, book_description, book_price, book_tax, book_availability, book_availability_count, book_number_of_reviews)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO books (
+            book_title,
+            book_upc,
+            book_category,
+            book_description,
+            book_price, book_tax,
+            book_availability,
+            book_availability_count,
+            book_number_of_reviews,
+            book_image_url
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         try:
             with self.conn.cursor() as cur:
@@ -91,7 +102,8 @@ class Writer:
                     book.book_tax,
                     book.book_availability,
                     book.book_availability_count,
-                    book.book_number_of_reviews
+                    book.book_number_of_reviews,
+                    book.book_image_url
                 ))
                 self.conn.commit()
 

@@ -27,4 +27,5 @@ class Book:
     book_availability: bool
     book_availability_count: int
     book_number_of_reviews: int
+    book_image_url: str
 
