@@ -1,9 +1,10 @@
 import os
 import psycopg2
-from dotenv import load_dotenv
-from queue import Empty, Queue
 import time
-from .parser import ProductDetails
+from dotenv import load_dotenv
+from queue import Empty
+from multiprocessing import Queue
+from dclass import Book
 
 load_dotenv()
 
@@ -37,8 +38,8 @@ class Writer:
         time.sleep(15)
         while True:
             try:
-                product: ProductDetails = self.result_queue.get(timeout=20)
-                self.insert_product(product)
+                book: Book = self.result_queue.get(timeout=20)
+                self.insert_book(book)
             except Empty:
                 if not self.task_queue.empty():
                     continue
@@ -49,46 +50,53 @@ class Writer:
             
             
     def create_table(self):
-        """Create the products table if it doesn't exist."""
+        """Create the books table if it doesn't exist."""
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE IF NOT EXISTS books (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            description TEXT,
-            min_price INTEGER,
-            max_price INTEGER,
-            median_price INTEGER
+            book_title VARCHAR(255) NOT NULL,
+            book_upc VARCHAR(255) NOT NULL,
+            book_category VARCHAR(255) NOT NULL,
+            book_description TEXT,
+            book_price VARCHAR(255) NOT NULL,
+            book_tax VARCHAR(255) NOT NULL,
+            book_availability BOOLEAN NOT NULL,
+            book_availability_count INTEGER NOT NULL,
+            book_number_of_reviews INTEGER NOT NULL
         );
         """
         try:
             with self.conn.cursor() as cur:
                 cur.execute(create_table_query)
                 self.conn.commit()
-                print("Table 'products' created or already exists.")
+                print("Table 'books' created or already exists.")
         except psycopg2.Error as e:
             print(f"Error creating table: {e}")
             self.conn.rollback()
             
-    def insert_product(self, product: ProductDetails):
-        """Insert a ProductDetails object into the products table."""
+    def insert_book(self, book: Book):
+        """Insert a Book object into the books table."""
         insert_query = """
-        INSERT INTO products (name, description, min_price, max_price, median_price)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO books (book_title, book_upc, book_category, book_description, book_price, book_tax, book_availability, book_availability_count, book_number_of_reviews)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         try:
             with self.conn.cursor() as cur:
                 cur.execute(insert_query, (
-                    product.name,
-                    product.description,
-                    product.min_price,
-                    product.max_price,
-                    product.median_price
+                    book.book_title,
+                    book.book_upc,
+                    book.book_category,
+                    book.book_description,
+                    book.book_price,
+                    book.book_tax,
+                    book.book_availability,
+                    book.book_availability_count,
+                    book.book_number_of_reviews
                 ))
                 self.conn.commit()
-            self.result_queue.task_done()
-                # print(f"Inserted product '{product.name}'")
+
         except psycopg2.Error as e:
-            print(f"Error inserting product: {e}")
+            print(f"Error inserting book: {e}")
             self.conn.rollback()
             return None
 
