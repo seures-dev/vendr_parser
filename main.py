@@ -1,14 +1,20 @@
 from pathlib import Path
 import json
-import re
+ 
+import os
 import time
+import json
 from urllib.parse import urlparse, urlunparse
-import requests
+
 from lxml import html
 from queue import Queue
 from threading import Thread
 from src.writer import Writer
 from src.parser import Parser, Task, TaskType, ProductDetails
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 
 def monitoring(parser_task_queue: Queue, parser_result_queue: Queue):
@@ -26,13 +32,16 @@ def monitoring(parser_task_queue: Queue, parser_result_queue: Queue):
     
     
 def main():
-    parser_count = 30
+    parser_count = int(os.getenv("PARSER_COUNT", 20))
     user_agents = json.load(open("src/user-agents.json"))
     parser_task_queue = Queue()
     parser_result_queue = Queue()
-    parser_task_queue.put(Task(TaskType.EXTRACT_SUBCATEGORIES, "https://www.vendr.com/categories/devops", "https://www.google.com/"))
-    parser_task_queue.put(Task(TaskType.EXTRACT_SUBCATEGORIES, "https://www.vendr.com/categories/it-infrastructure", "https://www.google.com/"))
-    parser_task_queue.put(Task(TaskType.EXTRACT_SUBCATEGORIES, "https://www.vendr.com/categories/data-analytics-and-management", "https://www.google.com/"))
+    urls_list = json.loads(os.getenv("CATEGORIES_URLS","[]"))
+    start_referer = os.getenv("START_REFERER","https://www.google.com/")
+    
+    for url in urls_list:
+        parser_task_queue.put(Task(TaskType.EXTRACT_SUBCATEGORIES, url, start_referer))
+        
     for i in range(parser_count):
         ua_index = i % len(user_agents)
         parser = Parser(parser_task_queue, parser_result_queue, user_agents[ua_index])
